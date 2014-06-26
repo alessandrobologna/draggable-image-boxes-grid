@@ -29,7 +29,7 @@
                 <img src="${src}" alt="" class="ib-preview-img"/>
                 <span class="ib-preview-descr" style="display:none;">${description}</span>
 				<span class="ib-preview-see-more" style="dispay:none;">
-					<a target="_blank" href="${path}">read more in onebot</a>
+					<a target="_blank" href="${path}">read more...</a>
 				</span>
                 <div class="ib-nav" style="display:none;">
                     <span class="ib-nav-prev">Previous</span>
@@ -95,7 +95,7 @@
 									image      : uri+'.resize.210.jpg',
 									bigImage   : uri+'.resize.width.1024.jpg',
 									title      : this.title,
-									path  	   : host + this.url
+									path  	   : this.link
 							}
 							$('.ib-main .clr').before($('#imageTmpl').tmpl(content));
 						}
