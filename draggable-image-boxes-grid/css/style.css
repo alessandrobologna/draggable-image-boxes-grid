@@ -66,14 +66,16 @@ a{
 }
 .ib-main-wrapper{
     width: 100%;
-    overflow: hidden;
+    overflow: scroll;
     margin-top: 40px;
     outline: none;
+    height:100%;
     /*height dynamic*/
 }
 .ib-main{
     position: relative;
-    width: 2546px;
+   /*width: 2546px;*/
+    width: 100%;
 }
 .ib-main a{
     float: left;
@@ -276,4 +278,39 @@ a{
     -webkit-border-radius: 10px;
     border-radius: 10px 10px 10px 10px;
     opacity: 0.9;
+}
+
+.ib-preview-descr {
+	left:0;
+	width:100%;
+}
+
+.ib-preview-descr::before {
+	background: rgba(0, 0, 0, 0.368627);
+	content: '';
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	z-index: -1;
+}
+
+.social {
+	position: absolute;
+	top: 0;
+	right: 0;
+	text-shadow: 1px 0px 2px rgba(0, 0, 0, 1);
+}
+
+.social li {
+	text-align: right;
+	margin-right: 0.5rem;
+}
+
+.social li span {
+	margin-right: 0.3rem;
+}
+
+.social li .fa {
+	width: 0.4rem;
+	text-align: center;
 }

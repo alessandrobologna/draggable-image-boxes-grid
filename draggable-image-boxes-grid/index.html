@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+2<!DOCTYPE html>
 <html lang="en">
     <head>
         <title>Draggable Image Boxes Grid</title>
@@ -10,6 +10,7 @@
         <meta name="author" content="Codrops" />
         <link rel="shortcut icon" href="../favicon.ico"> 
         <link rel="stylesheet" type="text/css" href="css/style.css" />
+        <link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" />
 		<noscript>
 			<style>
 				.ib-main a{
@@ -27,7 +28,9 @@
 		<script id="previewTmpl" type="text/x-jquery-tmpl">
 			<div id="ib-img-preview" class="ib-preview">
                 <img src="${src}" alt="" class="ib-preview-img"/>
-                <span class="ib-preview-descr" style="display:none;">${description}</span>
+                <span class="ib-preview-descr" style="display:none;">
+					${description}
+				</span>
 				<span class="ib-preview-see-more" style="dispay:none;">
 					<a target="_blank" href="${path}">read more...</a>
 				</span>
@@ -51,11 +54,30 @@
 				<img src="${image}" data-largesrc="${bigImage}" />
 				<span class="title">${title}</span>
 				<span class="path" style="display:none">${path}</span>
+				<ul class="social" data-link="${path}">
+					<li class="facebook">
+						<span></span><i class="fa fa-facebook"></i>
+					</li>
+					<li class="twitter">
+						<span></span><i class="fa fa-twitter"></i>
+					</li>
+					<li class="pinterest">
+						<span></span><i class="fa fa-pinterest"></i>
+					</li>
+				</ul>
 			</a>	
 		</script>
     </head>
     <body>
         <div class="container">
+           <div id="header" class="header">
+                <span class="right_ab">
+					<a href="http://www.onebot.timeinc.com/" target="_blank">Powered by onebot, images by <strong>Time.com</strong></a>
+                    <a href="http://creativecommons.org/licenses/by/2.0/deed.en_GB" target="_blank">CC BY 2.0</a>
+					<a href="http://tympanus.net/codrops/2011/10/07/draggable-image-boxes-grid/"><strong>Back to the Codrops Article</strong></a>
+                </span>
+            </div>
+        
             <div id="ib-top" class="ib-top">
                 <h1>Draggable Image Boxes Grid <span>with jQuery</span></h1>
             </div>
@@ -76,30 +98,60 @@
 				</div>
             </div>
         </div>
-        
+        <a id="#loadMore" href="#"></a>
         <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 		<script type="text/javascript" src="js/jquery.tmpl.min.js"></script>
         <script type="text/javascript" src="js/jquery.kinetic.js"></script>
 		<script type="text/javascript" src="js/jquery.easing.1.3.js"></script>
+		<script src="js/time.js"></script>
+		
         <script type="text/javascript">
             $(function() {
 				// new stuff
+				
+				function processJson(dataItem) {
+					if (dataItem.photos.length > 0) {
+						url = dataItem.link;
+						uri = 'http:' + dataItem.photos[0].uri;
+						
+					
+						content = {
+								image      : uri+'.resize.210.jpg',
+								bigImage   : uri+'.resize.width.1024.jpg',
+								title      : dataItem.title,
+								path  	   : dataItem.link
+						}
+						return content;
+					} else {
+						console.log(dataItem);
+					}
+					return null;
+				}; 
+				
 				var host = 'http://www.qa.1bot.co';
-				$.getJSON(host+'/search.json?order=score&brand=myrecipes.com&query=chicken&limit=76', {
+				$.getJSON(host+'/search.json?brand=time.com&type=photos&limit=40&order=activity', {
 					format: 'json'
 				}).done(function(data) {
-					$.each(data, function() {
-						if (typeof this.photos[0] !== 'undefined' && this.photos[0].uri.indexOf('commrec') < 0) {
-							uri = 'http:' + this.photos[0].uri;
-							content = {
-									image      : uri+'.resize.210.jpg',
-									bigImage   : uri+'.resize.width.1024.jpg',
-									title      : this.title,
-									path  	   : this.link
-							}
-							$('.ib-main .clr').before($('#imageTmpl').tmpl(content));
+					$.each(data, function () {
+						//console.log(this.photos.length>0)
+						var processed = processJson(this);
+						if (null != processed) {
+							$('.ib-main .clr').before($('#imageTmpl').tmpl(processed));
 						}
 					});
+					
+					var service = "f t p";
+					var resultHandler = function (data) {
+						for (var i=0;i<data.length;i++) {
+							var $dataLink = $('[data-link="' +data[i].url+'"]');
+							$dataLink.find('.facebook span').text(data[i].f);
+							$dataLink.find('.twitter span').text(data[i].t);
+							$dataLink.find('.pinterest span').text(data[i].p);
+						}
+					}
+					var urls = [];
+					$('[data-link]').each(function() { urls.push($(this).data('link'))})
+				    Onebot.count.get(service, resultHandler,urls );
 					
 					var $ibWrapper	= $('#ib-main-wrapper'),
 					Template	= (function() {
@@ -116,12 +168,55 @@
 							// total image items on the grid
 							imgItemsCount				= $ibImgItems.length,
 							init						= function() {
+								var _self = this;
 								// add a class ib-image to the image items
 								$ibImgItems.addClass('ib-image');
 								// apply the kinetic plugin to the wrapper
-								loadKinetic();
+								//loadKinetic();
 								// load some events
 								initEvents();
+								
+								// add infinite scroll
+								var batch=0;
+								var querying = false;
+								$('.ib-main-wrapper').scroll(function(){
+									
+								    if($(this).scrollTop() == $('.ib-main').height() - $(this).height()) {
+								    	if (querying) {
+											return;
+										}
+										querying = true;
+								    	batch++;
+										$.getJSON(host+'/search.json?brand=time.com&limit=40&offset=##&order=activity'.replace('##',batch*40), {
+											format: 'json'
+										}).done(function(data) {
+											$.each(data, function () {
+												//console.log(this.photos.length>0)
+												var processed = processJson(this);
+												if (null != processed) {
+													_self.addItem(processed);
+												}
+											});
+											var service = "f t p";
+											var resultHandler = function (data) {
+												for (var i=0;i<data.length;i++) {
+													var $dataLink = $('[data-link="' +data[i].url+'"]');
+													$dataLink.find('.facebook span').text(data[i].f);
+													$dataLink.find('.twitter span').text(data[i].t);
+													$dataLink.find('.pinterest span').text(data[i].p);
+												}
+											}
+											var urls = [];
+											for (var i=0;i<data.length;i++) {
+												urls.push(data[i].link)
+											}
+										    Onebot.count.get(service, resultHandler,urls );
+											querying = false;
+										}).fail(function() {
+											querying = false;
+										});
+									}
+								});
 							},
 							loadKinetic					= function() {
 								setWrapperSize();
@@ -155,6 +250,17 @@
 										height	: $(window).height()
 									})
 								});
+							},
+							addItem                     = function(content) {
+								var $added = ($('#imageTmpl').tmpl(content)).insertBefore($('.ib-main .clr'));
+								$added.bind('click.ibTemplate', function(event) {
+									if (!kinetic_moving) {
+										openItem($(this));
+									}
+									return false;	
+								});
+								$ibImgItems.push($added[0]);
+								imgItemsCount = $ibImgItems.length;
 							},
 							openItem					= function($item) {
 								
@@ -457,9 +563,15 @@
 									top		: (w_h - new_h) / 2
 								};
 							};
-						return { init : init };
+						return { init : init, addItem : addItem };
 					})();
 					Template.init();
+					Template.addItem({
+						image      : 'http://cdn.media.qa.1bot.co/com/wordpress/files/timedotcom/2014/06/howard-university-hbcu.jpg.resize.210.jpg',
+						bigImage   : 'http://cdn.media.qa.1bot.co/com/wordpress/files/timedotcom/2014/06/howard-university-hbcu.jpg.resize.1024.jpg',
+						title      : 'bah',
+						path  	   : 'boo'
+					});
 				})
 				
             });
